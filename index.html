@@ -539,6 +539,27 @@ input::placeholder{color:var(--mute);opacity:.8}
 .stk .pgd{width:8px;height:8px}.stk .pgd.on{width:20px}
 .stk .mt i{height:6px}
 .stk #tabs{row-gap:0;align-content:start}.stk #tabs .pgr{align-self:center}
+/* drag-to-drop orb */
+.v-enter #app>.bar.orbsp,.stk.v-enter #app>.bar.orbsp{height:66px;background:none!important;border:0!important;padding:0!important;margin:auto 0 0!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#orb{position:fixed;z-index:47;right:20px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:62px;height:62px;border-radius:50%;display:none;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none;--og:#e6c46c;background:radial-gradient(circle at 35% 30%,#4a4a4a 0,#111 55%,#000 100%);box-shadow:0 0 0 1.5px #1f1d1a,0 0 18px 2px color-mix(in srgb,var(--og) 55%,transparent),0 8px 20px rgba(0,0,0,.3);animation:orbB 2.6s ease-in-out infinite;transition:opacity .2s}
+:root:not(.stk) #orb{--og:var(--brand)}
+.v-enter #orb{display:block}
+body:has(#lockscr:not(.out)) #orb{display:none!important}
+#orb svg{position:absolute;inset:0;width:100%;height:100%}
+#orb .core{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--og);box-shadow:0 0 12px 3px var(--og)}
+#orb.drag{cursor:grabbing;animation:none;transition:none}
+#orb.back{transition:transform .45s cubic-bezier(.3,1.5,.5,1)}
+@keyframes orbB{0%,100%{box-shadow:0 0 0 1.5px #1f1d1a,0 0 14px 1px color-mix(in srgb,var(--og) 45%,transparent),0 8px 20px rgba(0,0,0,.3)}50%{box-shadow:0 0 0 1.5px #1f1d1a,0 0 28px 7px color-mix(in srgb,var(--og) 70%,transparent),0 8px 20px rgba(0,0,0,.3)}}
+#orbbg{position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s}
+#orbbg.on{opacity:1;pointer-events:auto}
+.otg{position:fixed;z-index:46;width:88px;height:88px;margin:-44px 0 0 -44px;border-radius:50%;display:grid;place-items:center;font-size:30px;font-weight:600;line-height:1;opacity:0;transform:scale(.4);pointer-events:none;transition:opacity .2s,transform .3s cubic-bezier(.3,1.5,.5,1),box-shadow .2s;border:1.5px solid #1f1d1a;box-shadow:3px 3px 0 #1f1d1a}
+.otg span{position:absolute;top:100%;margin-top:12px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#fff;font-weight:600;white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.otg.on{opacity:1;transform:scale(1);pointer-events:auto}
+.otg.on.hot{transform:scale(1.22);box-shadow:0 0 0 8px rgba(255,255,255,.35),3px 3px 0 #1f1d1a}
+#otS{background:#e6c46c;color:#1f1d1a}#otC{background:#fff;color:#1f1d1a}
+:root:not(.stk) #otS{background:var(--brand);color:#fff;border-color:transparent;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+:root:not(.stk) #otC{background:var(--card);color:var(--ink);border-color:var(--line);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.orip{position:fixed;z-index:48;border-radius:50%;pointer-events:none}
 </style>
 </head>
 <body>
@@ -629,7 +650,7 @@ function render(){
         h+=`<div class="card" data-sec="${s}" data-nm="${esc(r.name.toLowerCase())}"><div class="rh"><span class="num">${String(act.indexOf(r)+1).padStart(2,"0")}</span><span>${esc(r.name).replace(/\+/g,"+<wbr>")}</span></div><div class="row3" data-n="${["b","i","n"].filter(k=>has(r,k)).length||1}" style="grid-template-columns:repeat(${["b","i","n"].filter(k=>has(r,k)).length||1},1fr)">
         ${!has(r,"b")?"":f("b",L(r,"b")+(r.mult===1?"":" (×"+r.mult+")"),r.mult===1?"":`<div class="calc" data-calc="${r.id}">${calcText(r,d.b)}</div>`)}${has(r,"i")?f("i",L(r,"i")):""}${has(r,"n")?f("n",L(r,"n")):""}</div></div>`}
     }
-    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar"><button class="ghost" data-act="cancel">Cancel</button><button class="pri" data-act="save">Save count</button></div>`;
+    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar orbsp"></div>`;
   }else if(view==="history"){
     h=`<button class="back" data-go="home">← Home</button><div class="eye">Your history</div><h1>Previous counts</h1><p class="mute">Every saved session, right here on this device.</p>`;
     h+=sessions.length?`<div class="list">${sessions.map(s=>`<div class="swr" data-sid="${s.id}"><button class="swd" data-delsess="${s.id}" aria-label="Delete">Delete</button><div class="it swi" data-open="${s.id}" style="cursor:pointer"><div><div>${nice(s.date)}</div><div class="mute" style="font-weight:400;font-size:14px">${s.entries.length} rows</div></div><span class="chk" style="color:var(--mute)">→</span></div></div>`).join("")}</div>`
@@ -660,6 +681,7 @@ function render(){
   holoInit();
   if(view==="enter"){updTabs();applyFilter();saveDraft();moveInd()}
   if(view==="manage"&&mq)applyMq();
+  orbTargets(false);if(view==="enter")orbUpd();
 }
 
 document.addEventListener("click",async e=>{
@@ -810,7 +832,7 @@ window.addEventListener("scroll",()=>{if(true||view!=="enter"||spyT)return;spyT=
   if(cur&&cur!==secTab){secTab=cur;document.querySelectorAll("#tabs .tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===cur));moveInd()}},80)},{passive:true});
 const PCOL={"Stock room":"#e0a070","Chiller":"#94acd6","Freezer":"#8cc5c2","Buns":"#e6c46c"};
 function updTabs(){
-  const t=document.getElementById("tabs");if(!t)return;
+  orbUpd();const t=document.getElementById("tabs");if(!t)return;
   const rs=rows.filter(r=>pgOf(r)===secTab&&r.active),dn=r=>{const d=drafts[r.id]||{};return ["b","i","n"].some(k=>has(r,k)&&(d[k]||"")!=="")},n=rs.filter(dn).length;
   document.documentElement.style.setProperty("--pc",PCOL[secTab]||"#e6c46c");
   t.dataset.n=rs.length>8?"x":rs.length>5?"m":"s";
@@ -849,7 +871,7 @@ window.addEventListener("resize",()=>{if(view==="enter")fitVV()});
 function setSec(name,dir){if(!PG.includes(name)||name===secTab)return;secTab=name;saveDraft();applyFilter();updTabs();const ap=document.getElementById("app");ap.scrollTop=0;window.scrollTo(0,0);
   if(dir&&motionOn()){document.body.classList.remove("sw-n","sw-p");void document.body.offsetWidth;document.body.classList.add(dir>0?"sw-n":"sw-p");setTimeout(()=>document.body.classList.remove("sw-n","sw-p"),260)}}
 let tX=0,tY=0,tOk=false;
-document.addEventListener("touchstart",e=>{const t=e.touches[0];tX=t.clientX;tY=t.clientY;tOk=view==="enter"&&e.touches.length===1&&tX>24&&!(e.target.closest&&e.target.closest(".modal,#modal,input[type=date],#q"))},{passive:true});
+document.addEventListener("touchstart",e=>{const t=e.touches[0];tX=t.clientX;tY=t.clientY;tOk=view==="enter"&&e.touches.length===1&&tX>24&&!(e.target.closest&&e.target.closest(".modal,#modal,input[type=date],#q,#orb,.otg"))},{passive:true});
 document.addEventListener("touchend",e=>{if(!tOk)return;tOk=false;const t=e.changedTouches[0],dx=t.clientX-tX,dy=t.clientY-tY;
   if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6||qry.trim())return;
   const i=PG.indexOf(secTab),n=dx<0?i+1:i-1;if(n>=0&&n<PG.length)setSec(PG[n],dx<0?1:-1)},{passive:true});
@@ -1315,6 +1337,40 @@ function storageNote(){
 }
 askPersist();
 document.addEventListener("pointerdown",()=>{if(persistState==="off"&&!persistRetried){persistRetried=true;askPersist()}});
+/* drag-to-drop orb for Save / Cancel */
+const orb=document.createElement("div");orb.id="orb";orb.tabIndex=0;orb.setAttribute("role","button");orb.setAttribute("aria-label","Drag onto Save or Cancel");
+orb.innerHTML='<svg viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="27" fill="none" stroke="#2e2e2e" stroke-width="2.5"/><circle class="org" cx="31" cy="31" r="27" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="169.6" transform="rotate(-90 31 31)" style="stroke:var(--og);transition:stroke-dashoffset .35s"/></svg><i class="core"></i>';
+const orbBg=document.createElement("div");orbBg.id="orbbg";
+const mkT=(id,act,ic,lb)=>{const b=document.createElement("button");b.id=id;b.className="otg";b.dataset.act=act;b.setAttribute("aria-label",lb);b.innerHTML=ic+"<span>"+lb+"</span>";return b};
+const otS=mkT("otS","save","✓","Save"),otC=mkT("otC","cancel","✕","Cancel");
+document.body.append(orbBg,otS,otC,orb);
+let oD=null,oShown=false;
+const tc=el=>{const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2}};
+function orbTargets(on){oShown=on;
+  if(on){const W=innerWidth,H=innerHeight;otS.style.left=(W*.68)+"px";otS.style.top=(H*.5)+"px";otC.style.left=(W*.32)+"px";otC.style.top=(H*.5)+"px";const a=document.activeElement;if(a&&a.tagName==="INPUT")a.blur()}
+  otS.classList.toggle("on",on);otC.classList.toggle("on",on);orbBg.classList.toggle("on",on);if(!on){otS.classList.remove("hot");otC.classList.remove("hot")}}
+function orbHome(){orb.classList.remove("drag");orb.classList.add("back");orb.style.transform="";setTimeout(()=>orb.classList.remove("back"),460)}
+function orbUpd(){const act=active(),n=act.filter(r=>{const d=drafts[r.id]||{};return["b","i","n"].some(k=>has(r,k)&&(d[k]||"")!=="")}).length,t=act.length;
+  orb.querySelector(".org").style.strokeDashoffset=(169.6*(1-(t?n/t:0))).toFixed(1)}
+function orbRipple(x,y,col){if(!motionOn())return;const r=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));const d=document.createElement("i");d.className="orip";
+  d.style.cssText="left:"+x+"px;top:"+y+"px;width:"+r*2+"px;height:"+r*2+"px;background:"+col;document.body.appendChild(d);
+  d.animate([{transform:"translate(-50%,-50%) scale(0)",opacity:.55},{transform:"translate(-50%,-50%) scale(1)",opacity:0}],{duration:650,easing:"cubic-bezier(.2,.7,.3,1)"}).onfinish=()=>d.remove()}
+orb.addEventListener("pointerdown",e=>{e.preventDefault();const r=orb.getBoundingClientRect();oD={x0:e.clientX,y0:e.clientY,cx:r.left+r.width/2,cy:r.top+r.height/2,moved:false,hot:null};try{orb.setPointerCapture(e.pointerId)}catch(err){}});
+orb.addEventListener("pointermove",e=>{if(!oD)return;let dx=e.clientX-oD.x0,dy=e.clientY-oD.y0;
+  if(!oD.moved){if(Math.hypot(dx,dy)<6)return;oD.moved=true;orb.classList.add("drag");orb.classList.remove("back");orbTargets(true);if(navigator.vibrate)navigator.vibrate(6)}
+  const px=oD.cx+dx,py=oD.cy+dy;let hot=null;
+  for(const t of [otS,otC]){const c=tc(t);if(Math.hypot(px-c.x,py-c.y)<70)hot=t}
+  if(hot!==oD.hot){oD.hot=hot;otS.classList.toggle("hot",hot===otS);otC.classList.toggle("hot",hot===otC);if(hot&&navigator.vibrate)navigator.vibrate(12)}
+  if(hot){const c=tc(hot);dx=c.x-oD.cx;dy=c.y-oD.cy}
+  orb.style.transform="translate("+dx+"px,"+dy+"px)"});
+function orbEnd(){if(!oD)return;const d=oD;oD=null;
+  if(!d.moved){orbTargets(!oShown);return}
+  if(d.hot){const t=d.hot,c=tc(t);orbRipple(c.x,c.y,getComputedStyle(t).backgroundColor);orbTargets(false);orb.classList.remove("drag");orb.style.transform="";orb.style.opacity="0";
+    setTimeout(()=>{orb.style.opacity="";t.click()},motionOn()?280:0);return}
+  orbTargets(false);orbHome()}
+orb.addEventListener("pointerup",orbEnd);orb.addEventListener("pointercancel",orbEnd);
+orbBg.addEventListener("click",()=>orbTargets(false));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&oShown)orbTargets(false);else if((e.key==="Enter"||e.key===" ")&&e.target===orb){e.preventDefault();orbTargets(!oShown)}});
 render();
 logoIntro();
 if(SY.url)setTimeout(()=>syncNow(),800);
