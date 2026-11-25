@@ -539,6 +539,29 @@ input::placeholder{color:var(--mute);opacity:.8}
 .stk .pgd{width:8px;height:8px}.stk .pgd.on{width:20px}
 .stk .mt i{height:6px}
 .stk #tabs{row-gap:0;align-content:start}.stk #tabs .pgr{align-self:center}
+/* island pill */
+.v-enter header b{visibility:hidden}
+#isl{position:fixed;z-index:46;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translateX(-50%);width:112px;height:36px;border-radius:18px;background:#000;color:#fff;overflow:hidden;display:none;box-shadow:0 6px 20px rgba(0,0,0,.28);transition:width .45s cubic-bezier(.3,1.25,.4,1),height .45s cubic-bezier(.3,1.25,.4,1),border-radius .45s;cursor:pointer;-webkit-user-select:none;user-select:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.v-enter #isl{display:block}
+body:has(#lockscr:not(.out)) #isl{display:none!important}
+#isl.open{width:min(370px,calc(100vw - 20px));height:138px;border-radius:30px;cursor:default}
+#isl .mini{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.04em;transition:opacity .18s}
+#isl.open .mini{opacity:0;pointer-events:none}
+#isl .big{position:absolute;left:0;right:0;top:0;padding:18px 18px 16px;opacity:0;pointer-events:none;transition:opacity .15s}
+#isl.open .big{opacity:1;pointer-events:auto;transition:opacity .25s .18s}
+#isl .bt{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#aaa;white-space:nowrap}
+#isl .bt b{color:#fff;font-size:20px;font-weight:600;margin-right:2px}
+#isl .pb{height:4px;border-radius:2px;background:#2c2c2c;margin:10px 0 14px;overflow:hidden}
+#isl .pb i{display:block;height:100%;width:0;background:#e6c46c;transition:width .35s}
+#isl .rg{stroke:#e6c46c;transition:stroke-dashoffset .35s}
+#isl .btns{display:flex;gap:10px}
+#isl .btns button{height:46px;border-radius:14px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;box-shadow:none}
+#isl .ghost{flex:1;background:transparent;border:1.5px solid #3a3a3a;color:#fff}
+#isl .pri{flex:1.5;width:auto;background:#e6c46c;color:#111;border:0}
+:root:not(.stk) #isl .pri{background:var(--brand);color:#fff}
+:root:not(.stk) #isl .pb i{background:var(--brand)}:root:not(.stk) #isl .rg{stroke:var(--brand)}
+#islbg{position:fixed;inset:0;z-index:45;display:none;background:rgba(0,0,0,.18)}
+#islbg.on{display:block}
 </style>
 </head>
 <body>
@@ -629,7 +652,7 @@ function render(){
         h+=`<div class="card" data-sec="${s}" data-nm="${esc(r.name.toLowerCase())}"><div class="rh"><span class="num">${String(act.indexOf(r)+1).padStart(2,"0")}</span><span>${esc(r.name).replace(/\+/g,"+<wbr>")}</span></div><div class="row3" data-n="${["b","i","n"].filter(k=>has(r,k)).length||1}" style="grid-template-columns:repeat(${["b","i","n"].filter(k=>has(r,k)).length||1},1fr)">
         ${!has(r,"b")?"":f("b",L(r,"b")+(r.mult===1?"":" (×"+r.mult+")"),r.mult===1?"":`<div class="calc" data-calc="${r.id}">${calcText(r,d.b)}</div>`)}${has(r,"i")?f("i",L(r,"i")):""}${has(r,"n")?f("n",L(r,"n")):""}</div></div>`}
     }
-    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar"><button class="ghost" data-act="cancel">Cancel</button><button class="pri" data-act="save">Save count</button></div>`;
+    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p>`;
   }else if(view==="history"){
     h=`<button class="back" data-go="home">← Home</button><div class="eye">Your history</div><h1>Previous counts</h1><p class="mute">Every saved session, right here on this device.</p>`;
     h+=sessions.length?`<div class="list">${sessions.map(s=>`<div class="swr" data-sid="${s.id}"><button class="swd" data-delsess="${s.id}" aria-label="Delete">Delete</button><div class="it swi" data-open="${s.id}" style="cursor:pointer"><div><div>${nice(s.date)}</div><div class="mute" style="font-weight:400;font-size:14px">${s.entries.length} rows</div></div><span class="chk" style="color:var(--mute)">→</span></div></div>`).join("")}</div>`
@@ -660,6 +683,7 @@ function render(){
   holoInit();
   if(view==="enter"){updTabs();applyFilter();saveDraft();moveInd()}
   if(view==="manage"&&mq)applyMq();
+  islSet(false);if(view==="enter")islUpd();
 }
 
 document.addEventListener("click",async e=>{
@@ -810,7 +834,7 @@ window.addEventListener("scroll",()=>{if(true||view!=="enter"||spyT)return;spyT=
   if(cur&&cur!==secTab){secTab=cur;document.querySelectorAll("#tabs .tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===cur));moveInd()}},80)},{passive:true});
 const PCOL={"Stock room":"#e0a070","Chiller":"#94acd6","Freezer":"#8cc5c2","Buns":"#e6c46c"};
 function updTabs(){
-  const t=document.getElementById("tabs");if(!t)return;
+  islUpd();const t=document.getElementById("tabs");if(!t)return;
   const rs=rows.filter(r=>pgOf(r)===secTab&&r.active),dn=r=>{const d=drafts[r.id]||{};return ["b","i","n"].some(k=>has(r,k)&&(d[k]||"")!=="")},n=rs.filter(dn).length;
   document.documentElement.style.setProperty("--pc",PCOL[secTab]||"#e6c46c");
   t.dataset.n=rs.length>8?"x":rs.length>5?"m":"s";
@@ -1315,6 +1339,21 @@ function storageNote(){
 }
 askPersist();
 document.addEventListener("pointerdown",()=>{if(persistState==="off"&&!persistRetried){persistRetried=true;askPersist()}});
+/* island pill for Save / Cancel */
+const isl=document.createElement("div");isl.id="isl";isl.setAttribute("role","button");isl.tabIndex=0;isl.setAttribute("aria-label","Save or cancel");
+isl.innerHTML='<div class="mini"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#3a3a3a" stroke-width="2"/><circle class="rg" cx="8" cy="8" r="6" fill="none" stroke-width="2" stroke-linecap="round" stroke-dasharray="37.7" stroke-dashoffset="37.7" transform="rotate(-90 8 8)"/></svg><span class="mt2">0/0</span></div><div class="big"><div class="bt"><span><b class="bn">0</b> of <span class="bo">0</span> counted</span><span class="bs"></span></div><div class="pb"><i></i></div><div class="btns"><button class="ghost" data-act="cancel">Cancel</button><button class="pri" data-act="save">Save count</button></div></div>';
+const islBg=document.createElement("div");islBg.id="islbg";
+document.body.append(islBg,isl);
+let islOpen=false;
+function islSet(on){if(on===islOpen)return;islOpen=on;isl.classList.toggle("open",on);islBg.classList.toggle("on",on);
+  if(on){const a=document.activeElement;if(a&&a.tagName==="INPUT")a.blur();if(navigator.vibrate)navigator.vibrate(8)}}
+function islUpd(){const act=active(),n=act.filter(r=>{const d=drafts[r.id]||{};return["b","i","n"].some(k=>has(r,k)&&(d[k]||"")!=="")}).length,t=act.length,f=t?n/t:0;
+  isl.querySelector(".mt2").textContent=n+"/"+t;isl.querySelector(".rg").style.strokeDashoffset=(37.7*(1-f)).toFixed(1);
+  isl.querySelector(".bn").textContent=n;isl.querySelector(".bo").textContent=t;isl.querySelector(".pb i").style.width=(f*100).toFixed(1)+"%";
+  isl.querySelector(".bs").textContent=t&&n===t?"All done ✓":Math.round(f*100)+"%"}
+isl.addEventListener("click",e=>{if(!islOpen&&!e.target.closest("button"))islSet(true)});
+islBg.addEventListener("click",()=>islSet(false));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&islOpen)islSet(false);else if((e.key==="Enter"||e.key===" ")&&e.target===isl&&!islOpen){e.preventDefault();islSet(true)}});
 render();
 logoIntro();
 if(SY.url)setTimeout(()=>syncNow(),800);
