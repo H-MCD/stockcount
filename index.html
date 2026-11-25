@@ -1347,10 +1347,10 @@ function isCheck(s){if(s.length<5)return false;let k=0;for(let i=1;i<s.length;i+
   const a=s[0],m=s[k],b=s[s.length-1],dx1=m.x-a.x,dy1=m.y-a.y,dx2=b.x-m.x,dy2=b.y-m.y,L1=Math.hypot(dx1,dy1),L2=Math.hypot(dx2,dy2);
   if(L1<12||L2<40||L2<L1*1.05)return false;
   if(dy1<8||dx1<-0.4*dy1)return false;
-  if(dx2<=0||-dy2<0.45*dx2)return false;
+  if(dx2<=0||-dy2<0.55*dx2)return false;
   if(b.x<=a.x)return false;
   return plen(s)<(L1+L2)*1.35}
-function isDiag(s){const a=s[0],b=s[s.length-1],dx=Math.abs(b.x-a.x),dy=Math.abs(b.y-a.y),L=Math.hypot(dx,dy);if(L<55||plen(s)>L*1.25)return false;const ang=Math.atan2(dy,dx)*180/Math.PI;return ang>22&&ang<70}
+function isDiag(s){const a=s[0],b=s[s.length-1],dx=Math.abs(b.x-a.x),dy=Math.abs(b.y-a.y),L=Math.hypot(dx,dy);if(L<55||plen(s)>L*1.25)return false;const ang=Math.atan2(dy,dx)*180/Math.PI;return ang>35&&ang<72}
 function crosses(p1,p2,p3,p4){const d=(a,b,c)=>(c.x-a.x)*(b.y-a.y)-(b.x-a.x)*(c.y-a.y);const d1=d(p3,p4,p1),d2=d(p3,p4,p2),d3=d(p1,p2,p3),d4=d(p1,p2,p4);return d1*d2<0&&d3*d4<0}
 function isX(s1,s2){if(!isDiag(s1)||!isDiag(s2))return false;const a=s1[0],b=s1[s1.length-1],c=s2[0],e=s2[s2.length-1];
   if(Math.sign((b.x-a.x)*(b.y-a.y))===Math.sign((e.x-c.x)*(e.y-c.y)))return false;return crosses(a,b,c,e)}
@@ -1366,10 +1366,10 @@ document.addEventListener("pointerdown",e=>{
 document.addEventListener("pointermove",e=>{if(!inkCur)return;
   if(app.scrollTop!==inkST){inkCur=null;inkDraw(inkCol(),1);return}
   const l=inkCur[inkCur.length-1];if(Math.hypot(e.clientX-l.x,e.clientY-l.y)<2.5)return;inkCur.push({x:e.clientX,y:e.clientY});
-  if(!inkShow){const xs=inkCur.map(p=>p.x),ys=inkCur.map(p=>p.y),w=Math.max(...xs)-Math.min(...xs),h=Math.max(...ys)-Math.min(...ys);if(Math.max(w,h)>14&&h>w*0.3)inkShow=true}
+  if(!inkShow){const xs=inkCur.map(p=>p.x),ys=inkCur.map(p=>p.y),w=Math.max(...xs)-Math.min(...xs),h=Math.max(...ys)-Math.min(...ys);let k=0;for(let q=1;q<ys.length;q++)if(ys[q]>ys[k])k=q;const L=inkCur.length-1,dip=ys[k]-ys[0],rise=ys[k]-ys[L],run=Math.abs(xs[L]-xs[k]);if(h>24&&(h>w*0.75||(dip>14&&rise>28&&rise>run*0.55)))inkShow=true}
   if(inkShow)inkDraw(inkCol(),1)});
 function inkUp(){if(!inkCur)return;const s=inkCur,shown=inkShow;inkCur=null;inkShow=false;
-  if(!shown||plen(s)<40){inkDraw(inkCol(),1);return}
+  if(!shown||plen(s)<40){if(isCheck(s)){inkWin("save",[s]);return}inkDraw(inkCol(),1);return}
   if(inkStrokes.length===1&&isX(inkStrokes[0],s)){inkWin("cancel",[inkStrokes[0],s]);return}
   if(isCheck(s)){inkWin("save",[s]);return}
   if(isDiag(s)&&!inkStrokes.length){drawT=Date.now();inkStrokes=[s];inkDraw(inkCol(),1);clearTimeout(inkT);inkT=setTimeout(()=>inkFail(inkStrokes.slice()),1100);return}
