@@ -539,6 +539,27 @@ input::placeholder{color:var(--mute);opacity:.8}
 .stk .pgd{width:8px;height:8px}.stk .pgd.on{width:20px}
 .stk .mt i{height:6px}
 .stk #tabs{row-gap:0;align-content:start}.stk #tabs .pgr{align-self:center}
+/* long-press menu for Save / Cancel */
+#app.nosc,#app.nosc *{touch-action:none}
+.v-enter #app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.v-enter #app input{-webkit-user-select:text;user-select:text}
+.v-enter #app>.bar.lbar,.stk.v-enter #app>.bar.lbar{display:block;background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;margin:auto 0 0!important;padding:4px 0 calc(6px + env(safe-area-inset-bottom,0px))!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;text-align:center}
+.v-enter .lbar .lh2,.stk.v-enter .lbar .lh2{height:auto!important;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);padding:8px 12px!important;border:0!important;background:none!important;box-shadow:none!important;font-weight:500}
+.stk.v-enter .lbar .lh2{color:#1f1d1a;font-weight:600}
+#rad{position:fixed;inset:0;z-index:46;pointer-events:none;opacity:0;transition:opacity .15s}
+#rad.on{opacity:1;pointer-events:auto}
+#rad .rbg{position:absolute;inset:0;background:rgba(0,0,0,.32)}
+#rad .rring{position:absolute;width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.5);transform:scale(.3);transition:transform .3s cubic-bezier(.3,1.5,.5,1)}
+#rad .rdot{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#fff;box-shadow:0 0 0 7px rgba(255,255,255,.25)}
+#rad .ro{position:absolute;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;display:grid;place-items:center;font-size:26px;font-weight:600;line-height:1;padding:0;border:1.5px solid #1f1d1a;box-shadow:3px 3px 0 #1f1d1a;transform:scale(.3);transition:transform .32s cubic-bezier(.3,1.5,.5,1),box-shadow .2s}
+#rad .ro span{position:absolute;top:100%;margin-top:8px;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6);white-space:nowrap}
+#rad.on .rring{transform:scale(1)}
+#rad.on .ro{transform:translate(var(--tx),var(--ty)) scale(1)}
+#rad.on .ro.hot{transform:translate(var(--tx),var(--ty)) scale(1.2);box-shadow:0 0 0 8px rgba(255,255,255,.35),3px 3px 0 #1f1d1a}
+#roS{background:#e6c46c;color:#1f1d1a}#roC{background:#fff;color:#1f1d1a}
+:root:not(.stk) #roS{background:var(--brand);color:#fff;border-color:transparent;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+:root:not(.stk) #roC{background:var(--card);color:var(--ink);border-color:var(--line);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.rrip{position:fixed;z-index:48;border-radius:50%;pointer-events:none}
 </style>
 </head>
 <body>
@@ -629,7 +650,7 @@ function render(){
         h+=`<div class="card" data-sec="${s}" data-nm="${esc(r.name.toLowerCase())}"><div class="rh"><span class="num">${String(act.indexOf(r)+1).padStart(2,"0")}</span><span>${esc(r.name).replace(/\+/g,"+<wbr>")}</span></div><div class="row3" data-n="${["b","i","n"].filter(k=>has(r,k)).length||1}" style="grid-template-columns:repeat(${["b","i","n"].filter(k=>has(r,k)).length||1},1fr)">
         ${!has(r,"b")?"":f("b",L(r,"b")+(r.mult===1?"":" (×"+r.mult+")"),r.mult===1?"":`<div class="calc" data-calc="${r.id}">${calcText(r,d.b)}</div>`)}${has(r,"i")?f("i",L(r,"i")):""}${has(r,"n")?f("n",L(r,"n")):""}</div></div>`}
     }
-    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar"><button class="ghost" data-act="cancel">Cancel</button><button class="pri" data-act="save">Save count</button></div>`;
+    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar lbar"><button class="lh2" aria-label="Save or cancel. Hold anywhere on the page, or tap here.">Hold to save or cancel</button></div>`;
   }else if(view==="history"){
     h=`<button class="back" data-go="home">← Home</button><div class="eye">Your history</div><h1>Previous counts</h1><p class="mute">Every saved session, right here on this device.</p>`;
     h+=sessions.length?`<div class="list">${sessions.map(s=>`<div class="swr" data-sid="${s.id}"><button class="swd" data-delsess="${s.id}" aria-label="Delete">Delete</button><div class="it swi" data-open="${s.id}" style="cursor:pointer"><div><div>${nice(s.date)}</div><div class="mute" style="font-weight:400;font-size:14px">${s.entries.length} rows</div></div><span class="chk" style="color:var(--mute)">→</span></div></div>`).join("")}</div>`
@@ -660,6 +681,7 @@ function render(){
   holoInit();
   if(view==="enter"){updTabs();applyFilter();saveDraft();moveInd()}
   if(view==="manage"&&mq)applyMq();
+  radHide();if(view==="enter"){requestAnimationFrame(radTA);setTimeout(radTA,500)}else app.classList.remove("nosc");
 }
 
 document.addEventListener("click",async e=>{
@@ -852,7 +874,7 @@ let tX=0,tY=0,tOk=false;
 document.addEventListener("touchstart",e=>{const t=e.touches[0];tX=t.clientX;tY=t.clientY;tOk=view==="enter"&&e.touches.length===1&&tX>24&&!(e.target.closest&&e.target.closest(".modal,#modal,input[type=date],#q"))},{passive:true});
 document.addEventListener("touchend",e=>{if(!tOk)return;tOk=false;const t=e.changedTouches[0],dx=t.clientX-tX,dy=t.clientY-tY;
   if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6||qry.trim())return;
-  const i=PG.indexOf(secTab),n=dx<0?i+1:i-1;if(n>=0&&n<PG.length)setSec(PG[n],dx<0?1:-1)},{passive:true});
+  const i=PG.indexOf(secTab),n=dx<0?i+1:i-1;setTimeout(()=>{if(radOpen||Date.now()-lpTime<700)return;if(n>=0&&n<PG.length)setSec(PG[n],dx<0?1:-1)},40)},{passive:true});
 
 function applyMq(){const q=mq.trim().toLowerCase();
   document.querySelectorAll("#app .list[data-sec] .it.mr").forEach(el=>{const n=(el.querySelector(".line span:nth-child(3)")||{}).textContent||"";el.style.display=!q||n.toLowerCase().includes(q)?"":"none"})}
@@ -1315,6 +1337,38 @@ function storageNote(){
 }
 askPersist();
 document.addEventListener("pointerdown",()=>{if(persistState==="off"&&!persistRetried){persistRetried=true;askPersist()}});
+/* long-press anywhere: Save / Cancel ring */
+const rad=document.createElement("div");rad.id="rad";
+rad.innerHTML='<i class="rbg"></i><i class="rring"></i><i class="rdot"></i><button class="ro" id="roC" data-act="cancel" aria-label="Cancel">✕<span>Cancel</span></button><button class="ro" id="roS" data-act="save" aria-label="Save count">✓<span>Save</span></button>';
+document.body.appendChild(rad);
+const roS=rad.querySelector("#roS"),roC=rad.querySelector("#roC");
+let lp=null,radOpen=false,radHot=null,radDrag=false,lpTime=0,radC={x:0,y:0};
+function radTA(){app.classList.toggle("nosc",view==="enter"&&app.scrollHeight<=app.clientHeight+1)}
+addEventListener("resize",()=>setTimeout(radTA,300));
+function radShow(x,y,drag){const W=innerWidth,H=innerHeight;x=Math.max(100,Math.min(W-100,x));const up=y>200;y=Math.max(70,Math.min(H-130,y));radC={x,y};
+  for(const el of rad.querySelectorAll(".rring,.rdot,.ro")){el.style.left=x+"px";el.style.top=y+"px"}
+  const dy=(up?-72:72)+"px";roC.style.setProperty("--tx","-72px");roC.style.setProperty("--ty",dy);roS.style.setProperty("--tx","72px");roS.style.setProperty("--ty",dy);
+  radOpen=true;radDrag=!!drag;radHot=null;rad.classList.add("on");const a=document.activeElement;if(a&&a.tagName==="INPUT")a.blur();if(navigator.vibrate)navigator.vibrate(12)}
+function radHide(){if(!radOpen)return;radOpen=false;radDrag=false;radHot=null;rad.classList.remove("on");roS.classList.remove("hot");roC.classList.remove("hot")}
+const radPos=el=>({x:radC.x+parseFloat(el.style.getPropertyValue("--tx")),y:radC.y+parseFloat(el.style.getPropertyValue("--ty"))});
+function radPick(el){const p=radPos(el),col=getComputedStyle(el).backgroundColor;radHide();
+  if(motionOn()){const r=Math.hypot(Math.max(p.x,innerWidth-p.x),Math.max(p.y,innerHeight-p.y)),d=document.createElement("i");d.className="rrip";
+    d.style.cssText="left:"+p.x+"px;top:"+p.y+"px;width:"+r*2+"px;height:"+r*2+"px;background:"+col;document.body.appendChild(d);
+    d.animate([{transform:"translate(-50%,-50%) scale(0)",opacity:.5},{transform:"translate(-50%,-50%) scale(1)",opacity:0}],{duration:600,easing:"cubic-bezier(.2,.7,.3,1)"}).onfinish=()=>d.remove()}
+  if(navigator.vibrate)navigator.vibrate(el===roS?[10,40,18]:20);setTimeout(()=>el.click(),motionOn()?220:0)}
+document.addEventListener("pointerdown",e=>{
+  if(radOpen||view!=="enter"||document.getElementById("lockscr")||document.querySelector(".ov,.crw")||(e.pointerType==="mouse"&&e.button!==0))return;
+  if(e.target.closest&&e.target.closest("input,button,select,textarea,a"))return;
+  if(lp)clearTimeout(lp.t);const x=e.clientX,y=e.clientY;lp={x,y,t:setTimeout(()=>{if(!lp)return;lpTime=Date.now();radShow(lp.x,lp.y,true);lp=null},450)}});
+document.addEventListener("pointermove",e=>{
+  if(lp){if(Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>10){clearTimeout(lp.t);lp=null}return}
+  if(!radOpen||!radDrag)return;let hot=null;for(const el of [roS,roC]){const p=radPos(el);if(Math.hypot(e.clientX-p.x,e.clientY-p.y)<50)hot=el}
+  if(hot!==radHot){radHot=hot;roS.classList.toggle("hot",hot===roS);roC.classList.toggle("hot",hot===roC);if(hot&&navigator.vibrate)navigator.vibrate(8)}});
+function lpEnd(){if(lp){clearTimeout(lp.t);lp=null}if(radOpen&&radDrag){radDrag=false;lpTime=Date.now();if(radHot)radPick(radHot)}}
+document.addEventListener("pointerup",lpEnd);document.addEventListener("pointercancel",lpEnd);
+rad.addEventListener("click",e=>{if(e.target.closest(".ro")){radHide();return}if(Date.now()-lpTime>300)radHide()});
+document.addEventListener("click",e=>{const h=e.target.closest&&e.target.closest(".lh2");if(h){const r=h.getBoundingClientRect();lpTime=Date.now();radShow(r.left+r.width/2,r.top,false)}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&radOpen)radHide()});
 render();
 logoIntro();
 if(SY.url)setTimeout(()=>syncNow(),800);
