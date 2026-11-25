@@ -539,6 +539,20 @@ input::placeholder{color:var(--mute);opacity:.8}
 .stk .pgd{width:8px;height:8px}.stk .pgd.on{width:20px}
 .stk .mt i{height:6px}
 .stk #tabs{row-gap:0;align-content:start}.stk #tabs .pgr{align-self:center}
+/* swipe-up save sheet */
+.v-enter #app>.bar.hdl,.stk.v-enter #app>.bar.hdl{display:block;background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;margin:auto -22px 0!important;padding:8px 0 calc(6px + env(safe-area-inset-bottom,0px))!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;touch-action:none;cursor:grab;text-align:center;-webkit-user-select:none;user-select:none}
+.hdl .pill,#sheet .pill{display:block;width:44px;height:5px;border-radius:3px;background:var(--mute);opacity:.55;margin:0 auto 4px}
+.hdl .hl2{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.stk .hdl .pill,.stk #sheet .pill{background:#1f1d1a;opacity:1}.stk .hdl .hl2{color:#1f1d1a;font-weight:600}
+#shbg{position:fixed;inset:0;z-index:44;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s}
+#shbg.on{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;max-width:640px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;padding:10px 18px calc(16px + env(safe-area-inset-bottom,0px));transform:translateY(105%);visibility:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s .3s;touch-action:none;box-shadow:0 -10px 30px rgba(0,0,0,.18)}
+#sheet.on,#sheet.drag{visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s}
+#sheet.on{transform:none}
+#sheet.drag,#shbg.drag{transition:none}
+#sheet .pill{margin-bottom:14px}
+#sheet .btns{display:flex;gap:10px}#sheet .ghost{flex:1}#sheet .pri{flex:1.6}
+.stk #sheet{background:#f6f0e4;border:1.5px solid #1f1d1a;border-bottom:0;box-shadow:0 -3px 0 #1f1d1a}
 </style>
 </head>
 <body>
@@ -629,7 +643,7 @@ function render(){
         h+=`<div class="card" data-sec="${s}" data-nm="${esc(r.name.toLowerCase())}"><div class="rh"><span class="num">${String(act.indexOf(r)+1).padStart(2,"0")}</span><span>${esc(r.name).replace(/\+/g,"+<wbr>")}</span></div><div class="row3" data-n="${["b","i","n"].filter(k=>has(r,k)).length||1}" style="grid-template-columns:repeat(${["b","i","n"].filter(k=>has(r,k)).length||1},1fr)">
         ${!has(r,"b")?"":f("b",L(r,"b")+(r.mult===1?"":" (×"+r.mult+")"),r.mult===1?"":`<div class="calc" data-calc="${r.id}">${calcText(r,d.b)}</div>`)}${has(r,"i")?f("i",L(r,"i")):""}${has(r,"n")?f("n",L(r,"n")):""}</div></div>`}
     }
-    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar"><button class="ghost" data-act="cancel">Cancel</button><button class="pri" data-act="save">Save count</button></div>`;
+    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar hdl" role="button" tabindex="0" aria-label="Swipe up to save or cancel"><span class="pill"></span><span class="hl2">Swipe up to save</span></div>`;
   }else if(view==="history"){
     h=`<button class="back" data-go="home">← Home</button><div class="eye">Your history</div><h1>Previous counts</h1><p class="mute">Every saved session, right here on this device.</p>`;
     h+=sessions.length?`<div class="list">${sessions.map(s=>`<div class="swr" data-sid="${s.id}"><button class="swd" data-delsess="${s.id}" aria-label="Delete">Delete</button><div class="it swi" data-open="${s.id}" style="cursor:pointer"><div><div>${nice(s.date)}</div><div class="mute" style="font-weight:400;font-size:14px">${s.entries.length} rows</div></div><span class="chk" style="color:var(--mute)">→</span></div></div>`).join("")}</div>`
@@ -660,6 +674,7 @@ function render(){
   holoInit();
   if(view==="enter"){updTabs();applyFilter();saveDraft();moveInd()}
   if(view==="manage"&&mq)applyMq();
+  if(shOpen)sheetSet(false);
 }
 
 document.addEventListener("click",async e=>{
@@ -1315,6 +1330,24 @@ function storageNote(){
 }
 askPersist();
 document.addEventListener("pointerdown",()=>{if(persistState==="off"&&!persistRetried){persistRetried=true;askPersist()}});
+/* swipe-up sheet for Save / Cancel */
+const shBg=document.createElement("div");shBg.id="shbg";
+const shEl=document.createElement("div");shEl.id="sheet";shEl.setAttribute("role","dialog");shEl.setAttribute("aria-label","Save or cancel");
+shEl.innerHTML='<span class="pill"></span><div class="btns"><button class="ghost" data-act="cancel">Cancel</button><button class="pri" data-act="save">Save count</button></div>';
+document.body.append(shBg,shEl);
+let shOpen=false,shD=null;
+function sheetSet(on){shOpen=on;shEl.classList.remove("drag");shBg.classList.remove("drag");shEl.style.transform="";shBg.style.opacity="";shEl.classList.toggle("on",on);shBg.classList.toggle("on",on);
+  if(on){const a=document.activeElement;if(a&&a.tagName==="INPUT")a.blur()}}
+shBg.addEventListener("click",()=>sheetSet(false));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&shOpen)sheetSet(false);else if((e.key==="Enter"||e.key===" ")&&e.target.closest&&e.target.closest(".hdl")){e.preventDefault();sheetSet(true)}});
+document.addEventListener("pointerdown",e=>{const h=e.target.closest&&e.target.closest(".hdl,#sheet");if(!h||view!=="enter")return;if(e.target.closest("button"))return;
+  shD={y0:e.clientY,moved:false,from:shOpen,h:shEl.offsetHeight||150,off:null};try{h.setPointerCapture(e.pointerId)}catch(err){}});
+document.addEventListener("pointermove",e=>{if(!shD)return;const dy=e.clientY-shD.y0;
+  if(!shD.moved){if(Math.abs(dy)<6)return;shD.moved=true;shEl.classList.add("drag");shBg.classList.add("drag","on")}
+  const off=Math.min(shD.h,Math.max(0,shD.from?dy:shD.h+dy));shD.off=off;shEl.style.transform="translateY("+off+"px)";shBg.style.opacity=String(1-off/shD.h)});
+function shEnd(){if(!shD)return;const d=shD;shD=null;if(!d.moved){if(!d.from)sheetSet(true);return}
+  const off=d.off==null?(d.from?0:d.h):d.off;sheetSet(d.from?off<d.h*.35:off<d.h*.75)}
+document.addEventListener("pointerup",shEnd);document.addEventListener("pointercancel",shEnd);
 render();
 logoIntro();
 if(SY.url)setTimeout(()=>syncNow(),800);
