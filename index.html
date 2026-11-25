@@ -539,6 +539,17 @@ input::placeholder{color:var(--mute);opacity:.8}
 .stk .pgd{width:8px;height:8px}.stk .pgd.on{width:20px}
 .stk .mt i{height:6px}
 .stk #tabs{row-gap:0;align-content:start}.stk #tabs .pgr{align-self:center}
+/* draw to save */
+#app.nosc,#app.nosc *{touch-action:none}
+#ink{position:fixed;left:0;top:0;z-index:44;pointer-events:none}
+.stk #ink,#ink{display:block!important}
+.v-enter #app>.bar.dbar,.stk.v-enter #app>.bar.dbar{display:block;background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;margin:auto 0 0!important;padding:4px 0 calc(6px + env(safe-area-inset-bottom,0px))!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;text-align:center}
+.v-enter .dbar .dh,.stk.v-enter .dbar .dh{height:auto!important;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);padding:8px 12px!important;border:0!important;background:none!important;box-shadow:none!important;font-weight:500}
+.dbar .dh b{font-size:16px;letter-spacing:0;color:var(--ink);margin:0 3px}
+.stk.v-enter .dbar .dh{color:#1f1d1a;font-weight:600}
+.dbar .dbt{display:none;gap:10px;margin-top:4px}
+.dbar.open .dbt{display:flex}.dbar .dbt .ghost{flex:1}.dbar .dbt .pri{flex:1.5}
+.stk.v-enter .dbar .ghost{background:#fff!important;border:1.5px solid #1f1d1a!important;color:#1f1d1a!important;flex:1!important}
 </style>
 </head>
 <body>
@@ -629,7 +640,7 @@ function render(){
         h+=`<div class="card" data-sec="${s}" data-nm="${esc(r.name.toLowerCase())}"><div class="rh"><span class="num">${String(act.indexOf(r)+1).padStart(2,"0")}</span><span>${esc(r.name).replace(/\+/g,"+<wbr>")}</span></div><div class="row3" data-n="${["b","i","n"].filter(k=>has(r,k)).length||1}" style="grid-template-columns:repeat(${["b","i","n"].filter(k=>has(r,k)).length||1},1fr)">
         ${!has(r,"b")?"":f("b",L(r,"b")+(r.mult===1?"":" (×"+r.mult+")"),r.mult===1?"":`<div class="calc" data-calc="${r.id}">${calcText(r,d.b)}</div>`)}${has(r,"i")?f("i",L(r,"i")):""}${has(r,"n")?f("n",L(r,"n")):""}</div></div>`}
     }
-    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar"><button class="ghost" data-act="cancel">Cancel</button><button class="pri" data-act="save">Save count</button></div>`;
+    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar dbar"><button class="dh" aria-label="Draw a tick to save or a cross to cancel. Tap for buttons.">Draw <b>✓</b> to save · <b>✕</b> to cancel</button><div class="dbt"><button class="ghost" data-act="cancel">Cancel</button><button class="pri" data-act="save">Save count</button></div></div>`;
   }else if(view==="history"){
     h=`<button class="back" data-go="home">← Home</button><div class="eye">Your history</div><h1>Previous counts</h1><p class="mute">Every saved session, right here on this device.</p>`;
     h+=sessions.length?`<div class="list">${sessions.map(s=>`<div class="swr" data-sid="${s.id}"><button class="swd" data-delsess="${s.id}" aria-label="Delete">Delete</button><div class="it swi" data-open="${s.id}" style="cursor:pointer"><div><div>${nice(s.date)}</div><div class="mute" style="font-weight:400;font-size:14px">${s.entries.length} rows</div></div><span class="chk" style="color:var(--mute)">→</span></div></div>`).join("")}</div>`
@@ -660,6 +671,7 @@ function render(){
   holoInit();
   if(view==="enter"){updTabs();applyFilter();saveDraft();moveInd()}
   if(view==="manage"&&mq)applyMq();
+  inkClear();if(view==="enter"){requestAnimationFrame(inkTA);setTimeout(inkTA,500)}else app.classList.remove("nosc");
 }
 
 document.addEventListener("click",async e=>{
@@ -852,7 +864,7 @@ let tX=0,tY=0,tOk=false;
 document.addEventListener("touchstart",e=>{const t=e.touches[0];tX=t.clientX;tY=t.clientY;tOk=view==="enter"&&e.touches.length===1&&tX>24&&!(e.target.closest&&e.target.closest(".modal,#modal,input[type=date],#q"))},{passive:true});
 document.addEventListener("touchend",e=>{if(!tOk)return;tOk=false;const t=e.changedTouches[0],dx=t.clientX-tX,dy=t.clientY-tY;
   if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6||qry.trim())return;
-  const i=PG.indexOf(secTab),n=dx<0?i+1:i-1;if(n>=0&&n<PG.length)setSec(PG[n],dx<0?1:-1)},{passive:true});
+  const i=PG.indexOf(secTab),n=dx<0?i+1:i-1;setTimeout(()=>{if(Date.now()-drawT<700)return;if(n>=0&&n<PG.length)setSec(PG[n],dx<0?1:-1)},40)},{passive:true});
 
 function applyMq(){const q=mq.trim().toLowerCase();
   document.querySelectorAll("#app .list[data-sec] .it.mr").forEach(el=>{const n=(el.querySelector(".line span:nth-child(3)")||{}).textContent||"";el.style.display=!q||n.toLowerCase().includes(q)?"":"none"})}
@@ -1315,6 +1327,55 @@ function storageNote(){
 }
 askPersist();
 document.addEventListener("pointerdown",()=>{if(persistState==="off"&&!persistRetried){persistRetried=true;askPersist()}});
+/* draw a tick to save, a cross to cancel */
+const ink=document.createElement("canvas");ink.id="ink";document.body.appendChild(ink);
+let inkCtx=null,inkStrokes=[],inkCur=null,inkT=0,drawT=0,inkAnim=0,inkST=0,inkShow=false;
+function inkSize(){const d=Math.min(devicePixelRatio||1,2);ink.width=innerWidth*d;ink.height=innerHeight*d;ink.style.width=innerWidth+"px";ink.style.height=innerHeight+"px";inkCtx=ink.getContext("2d");inkCtx.setTransform(d,0,0,d,0,0)}
+inkSize();addEventListener("resize",()=>{inkSize();setTimeout(inkTA,300)});
+function inkTA(){app.classList.toggle("nosc",view==="enter"&&app.scrollHeight<=app.clientHeight+1)}
+const inkCol=()=>document.documentElement.classList.contains("stk")?"#1f1d1a":(getComputedStyle(document.documentElement).getPropertyValue("--brand").trim()||"#e5483c");
+function inkDraw(col,alpha,glow,list){const c=inkCtx;c.clearRect(0,0,innerWidth,innerHeight);c.save();c.globalAlpha=alpha;c.lineCap="round";c.lineJoin="round";c.lineWidth=5;c.strokeStyle=col;
+  if(glow){c.shadowColor=glow;c.shadowBlur=20}
+  for(const s of list||inkStrokes.concat(inkCur&&inkShow?[inkCur]:[])){if(s.length<2)continue;c.beginPath();c.moveTo(s[0].x,s[0].y);
+    for(let i=1;i<s.length-1;i++){const p=s[i],q=s[i+1];c.quadraticCurveTo(p.x,p.y,(p.x+q.x)/2,(p.y+q.y)/2)}c.lineTo(s[s.length-1].x,s[s.length-1].y);c.stroke()}
+  c.restore()}
+function inkClear(){cancelAnimationFrame(inkAnim);clearTimeout(inkT);inkStrokes=[];inkCur=null;if(inkCtx)inkCtx.clearRect(0,0,innerWidth,innerHeight)}
+function inkFade(col,glow,list,dur,cb){cancelAnimationFrame(inkAnim);if(!motionOn()){inkCtx.clearRect(0,0,innerWidth,innerHeight);cb&&cb();return}
+  const t0=performance.now();const f=now=>{const k=Math.min(1,(now-t0)/dur);inkDraw(col,1-k,glow,list);if(k<1)inkAnim=requestAnimationFrame(f);else{inkCtx.clearRect(0,0,innerWidth,innerHeight);cb&&cb()}};inkAnim=requestAnimationFrame(f)}
+const plen=s=>{let L=0;for(let i=1;i<s.length;i++)L+=Math.hypot(s[i].x-s[i-1].x,s[i].y-s[i-1].y);return L};
+function isCheck(s){if(s.length<5)return false;let k=0;for(let i=1;i<s.length;i++)if(s[i].y>s[k].y)k=i;
+  const a=s[0],m=s[k],b=s[s.length-1],dx1=m.x-a.x,dy1=m.y-a.y,dx2=b.x-m.x,dy2=b.y-m.y,L1=Math.hypot(dx1,dy1),L2=Math.hypot(dx2,dy2);
+  if(L1<12||L2<40||L2<L1*1.05)return false;
+  if(dy1<8||dx1<-0.4*dy1)return false;
+  if(dx2<=0||-dy2<0.45*dx2)return false;
+  if(b.x<=a.x)return false;
+  return plen(s)<(L1+L2)*1.35}
+function isDiag(s){const a=s[0],b=s[s.length-1],dx=Math.abs(b.x-a.x),dy=Math.abs(b.y-a.y),L=Math.hypot(dx,dy);if(L<55||plen(s)>L*1.25)return false;const ang=Math.atan2(dy,dx)*180/Math.PI;return ang>22&&ang<70}
+function crosses(p1,p2,p3,p4){const d=(a,b,c)=>(c.x-a.x)*(b.y-a.y)-(b.x-a.x)*(c.y-a.y);const d1=d(p3,p4,p1),d2=d(p3,p4,p2),d3=d(p1,p2,p3),d4=d(p1,p2,p4);return d1*d2<0&&d3*d4<0}
+function isX(s1,s2){if(!isDiag(s1)||!isDiag(s2))return false;const a=s1[0],b=s1[s1.length-1],c=s2[0],e=s2[s2.length-1];
+  if(Math.sign((b.x-a.x)*(b.y-a.y))===Math.sign((e.x-c.x)*(e.y-c.y)))return false;return crosses(a,b,c,e)}
+const inkS=document.createElement("button"),inkC=document.createElement("button");inkS.dataset.act="save";inkC.dataset.act="cancel";inkS.hidden=inkC.hidden=true;document.body.append(inkS,inkC);
+function inkWin(act,list){drawT=Date.now();clearTimeout(inkT);inkStrokes=[];inkCur=null;if(navigator.vibrate)navigator.vibrate(act==="save"?[10,40,18]:20);
+  const col=act==="save"?(document.documentElement.classList.contains("stk")?"#d9a63a":"#2fa36b"):"#c8281e";
+  inkDraw(col,1,col,list);setTimeout(()=>inkFade(col,col,list,320,()=>(act==="save"?inkS:inkC).click()),motionOn()?260:0)}
+function inkFail(list){inkStrokes=[];inkFade("#9a948a",null,list,260)}
+document.addEventListener("pointerdown",e=>{
+  if(view!=="enter"||document.getElementById("lockscr")||document.querySelector(".ov,.crw")||(e.pointerType==="mouse"&&e.button!==0))return;
+  if(e.target.closest&&e.target.closest("button,select,textarea,a,.dbar,input[type=date],#q"))return;
+  cancelAnimationFrame(inkAnim);inkCur=[{x:e.clientX,y:e.clientY}];inkShow=false;inkST=app.scrollTop;if(!inkStrokes.length)inkCtx.clearRect(0,0,innerWidth,innerHeight)});
+document.addEventListener("pointermove",e=>{if(!inkCur)return;
+  if(app.scrollTop!==inkST){inkCur=null;inkDraw(inkCol(),1);return}
+  const l=inkCur[inkCur.length-1];if(Math.hypot(e.clientX-l.x,e.clientY-l.y)<2.5)return;inkCur.push({x:e.clientX,y:e.clientY});
+  if(!inkShow){const xs=inkCur.map(p=>p.x),ys=inkCur.map(p=>p.y),w=Math.max(...xs)-Math.min(...xs),h=Math.max(...ys)-Math.min(...ys);if(Math.max(w,h)>14&&h>w*0.3)inkShow=true}
+  if(inkShow)inkDraw(inkCol(),1)});
+function inkUp(){if(!inkCur)return;const s=inkCur,shown=inkShow;inkCur=null;inkShow=false;
+  if(!shown||plen(s)<40){inkDraw(inkCol(),1);return}
+  if(inkStrokes.length===1&&isX(inkStrokes[0],s)){inkWin("cancel",[inkStrokes[0],s]);return}
+  if(isCheck(s)){inkWin("save",[s]);return}
+  if(isDiag(s)&&!inkStrokes.length){drawT=Date.now();inkStrokes=[s];inkDraw(inkCol(),1);clearTimeout(inkT);inkT=setTimeout(()=>inkFail(inkStrokes.slice()),1100);return}
+  drawT=Date.now();clearTimeout(inkT);inkFail(inkStrokes.concat([s]))}
+document.addEventListener("pointerup",inkUp);document.addEventListener("pointercancel",()=>{if(inkCur&&inkShow){inkUp();return}inkCur=null;inkDraw(inkCol(),1)});
+document.addEventListener("click",e=>{const h=e.target.closest&&e.target.closest(".dh");if(h)h.closest(".dbar").classList.toggle("open")});
 render();
 logoIntro();
 if(SY.url)setTimeout(()=>syncNow(),800);
