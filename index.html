@@ -542,7 +542,8 @@ input::placeholder{color:var(--mute);opacity:.8}
 /* long-press menu for Save / Cancel */
 #app.nosc,#app.nosc *{touch-action:none}
 .v-enter #app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.v-enter #app input{-webkit-user-select:text;user-select:text}
+.v-enter,.v-enter *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+.v-enter input:focus{-webkit-user-select:text!important;user-select:text!important}
 .v-enter #app>.bar.lbar,.stk.v-enter #app>.bar.lbar{display:block;background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;margin:auto 0 0!important;padding:4px 0 calc(6px + env(safe-area-inset-bottom,0px))!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;text-align:center}
 .v-enter .lbar .lh2,.stk.v-enter .lbar .lh2{height:auto!important;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);padding:8px 12px!important;border:0!important;background:none!important;box-shadow:none!important;font-weight:500}
 .stk.v-enter .lbar .lh2{color:#1f1d1a;font-weight:600}
@@ -1345,7 +1346,7 @@ addEventListener("resize",()=>setTimeout(radTA,300));
 function radShow(x,y,drag){const W=innerWidth,H=innerHeight;x=Math.max(100,Math.min(W-100,x));const up=y>200;y=Math.max(70,Math.min(H-130,y));radC={x,y};
   for(const el of rad.querySelectorAll(".rring,.rdot,.ro")){el.style.left=x+"px";el.style.top=y+"px"}
   const dy=(up?-72:72)+"px";roC.style.setProperty("--tx","-72px");roC.style.setProperty("--ty",dy);roS.style.setProperty("--tx","72px");roS.style.setProperty("--ty",dy);
-  radOpen=true;radDrag=!!drag;radHot=null;rad.classList.add("on");const a=document.activeElement;if(a&&a.tagName==="INPUT")a.blur();if(navigator.vibrate)navigator.vibrate(12)}
+  try{getSelection().removeAllRanges()}catch(err){}radOpen=true;radDrag=!!drag;radHot=null;rad.classList.add("on");const a=document.activeElement;if(a&&a.tagName==="INPUT")a.blur();if(navigator.vibrate)navigator.vibrate(12)}
 function radHide(){if(!radOpen)return;radOpen=false;radDrag=false;radHot=null;rad.classList.remove("on");roS.classList.remove("hot");roC.classList.remove("hot")}
 const radPos=el=>({x:radC.x+parseFloat(el.style.getPropertyValue("--tx")),y:radC.y+parseFloat(el.style.getPropertyValue("--ty"))});
 function radPick(el){const p=radPos(el),col=getComputedStyle(el).backgroundColor;radHide();
@@ -1366,6 +1367,9 @@ document.addEventListener("pointerup",lpEnd);document.addEventListener("pointerc
 rad.addEventListener("click",e=>{if(e.target.closest(".ro")){radHide();return}if(Date.now()-lpTime>300)radHide()});
 document.addEventListener("click",e=>{const h=e.target.closest&&e.target.closest(".lh2");if(h){const r=h.getBoundingClientRect();lpTime=Date.now();radShow(r.left+r.width/2,r.top,false)}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&radOpen)radHide()});
+const selOk=t=>t&&t.tagName==="INPUT"&&t===document.activeElement;
+document.addEventListener("selectstart",e=>{if(view==="enter"&&!selOk(e.target))e.preventDefault()});
+document.addEventListener("contextmenu",e=>{if(view==="enter")e.preventDefault()});
 render();
 logoIntro();
 if(SY.url)setTimeout(()=>syncNow(),800);
