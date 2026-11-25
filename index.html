@@ -651,7 +651,7 @@ function render(){
         h+=`<div class="card" data-sec="${s}" data-nm="${esc(r.name.toLowerCase())}"><div class="rh"><span class="num">${String(act.indexOf(r)+1).padStart(2,"0")}</span><span>${esc(r.name).replace(/\+/g,"+<wbr>")}</span></div><div class="row3" data-n="${["b","i","n"].filter(k=>has(r,k)).length||1}" style="grid-template-columns:repeat(${["b","i","n"].filter(k=>has(r,k)).length||1},1fr)">
         ${!has(r,"b")?"":f("b",L(r,"b")+(r.mult===1?"":" (×"+r.mult+")"),r.mult===1?"":`<div class="calc" data-calc="${r.id}">${calcText(r,d.b)}</div>`)}${has(r,"i")?f("i",L(r,"i")):""}${has(r,"n")?f("n",L(r,"n")):""}</div></div>`}
     }
-    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p><div class="bar lbar"><button class="lh2" aria-label="Save or cancel. Hold anywhere on the page, or tap here.">Hold to save or cancel</button></div>`;
+    h+=`<p class="mute" id="nores" style="display:none">No rows match your search.</p>`;
   }else if(view==="history"){
     h=`<button class="back" data-go="home">← Home</button><div class="eye">Your history</div><h1>Previous counts</h1><p class="mute">Every saved session, right here on this device.</p>`;
     h+=sessions.length?`<div class="list">${sessions.map(s=>`<div class="swr" data-sid="${s.id}"><button class="swd" data-delsess="${s.id}" aria-label="Delete">Delete</button><div class="it swi" data-open="${s.id}" style="cursor:pointer"><div><div>${nice(s.date)}</div><div class="mute" style="font-weight:400;font-size:14px">${s.entries.length} rows</div></div><span class="chk" style="color:var(--mute)">→</span></div></div>`).join("")}</div>`
