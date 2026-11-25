@@ -807,10 +807,7 @@ function endDrag(){
   setTimeout(render,360);
 }
 document.addEventListener("pointerup",endDrag);document.addEventListener("pointercancel",endDrag);
-let lpT=null,lpX=0,lpY=0;
-document.addEventListener("pointerdown",e=>{const i=e.target.closest&&e.target.closest("input[data-r]");if(!i||(i.value!==""&&i.value!=="~"))return;lpX=e.clientX;lpY=e.clientY;clearTimeout(lpT);lpT=setTimeout(()=>{if(i.value===""||i.value==="~"){i.value=i.value===""?"~":"";i.dispatchEvent(new Event("input",{bubbles:true}));if(navigator.vibrate)navigator.vibrate(15)}},450)});
-document.addEventListener("pointermove",e=>{if(lpT&&(Math.abs(e.clientX-lpX)>10||Math.abs(e.clientY-lpY)>10)){clearTimeout(lpT);lpT=null}});
-["pointerup","pointercancel"].forEach(t=>document.addEventListener(t,()=>{clearTimeout(lpT);lpT=null}));
+
 document.addEventListener("focusout",e=>{if(e.target.dataset&&e.target.dataset.base!==undefined)commitAdd(e.target)});
 
 function applyFilter(){
@@ -1358,7 +1355,7 @@ function radPick(el){const p=radPos(el),col=getComputedStyle(el).backgroundColor
   if(navigator.vibrate)navigator.vibrate(el===roS?[10,40,18]:20);setTimeout(()=>el.click(),motionOn()?220:0)}
 document.addEventListener("pointerdown",e=>{
   if(radOpen||view!=="enter"||document.getElementById("lockscr")||document.querySelector(".ov,.crw")||(e.pointerType==="mouse"&&e.button!==0))return;
-  if(e.target.closest&&e.target.closest("input,button,select,textarea,a"))return;
+  if(e.target.closest&&e.target.closest("button,select,textarea,a,input[type=date],#q"))return;
   if(lp)clearTimeout(lp.t);const x=e.clientX,y=e.clientY;lp={x,y,t:setTimeout(()=>{if(!lp)return;lpTime=Date.now();radShow(lp.x,lp.y,true);lp=null},450)}});
 document.addEventListener("pointermove",e=>{
   if(lp){if(Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>10){clearTimeout(lp.t);lp=null}return}
